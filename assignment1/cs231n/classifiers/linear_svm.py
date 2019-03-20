@@ -55,31 +55,29 @@ def svm_loss_vectorized(W, X, y, reg):
 
     Inputs and outputs are the same as svm_loss_naive.
     """
-    loss = 0.0
-    dW = np.zeros(W.shape)  # initialize the gradient as zero
+    dW = np.zeros(W.shape)  # D x C
 
-    #############################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the structured SVM loss, storing the    #
-    # result in loss.                                                           #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    num_train = X.shape[0]
 
-    #############################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the gradient for the structured SVM     #
-    # loss, storing the result in dW.                                           #
-    #                                                                           #
-    # Hint: Instead of computing the gradient from scratch, it may be easier    #
-    # to reuse some of the intermediate values that you used to compute the     #
-    # loss.                                                                     #
-    #############################################################################
-    pass
-    #############################################################################
-    #                             END OF YOUR CODE                              #
-    #############################################################################
+    # sort X and y according to y (so that X is orderd by its labels)
+    indices = y.argsort()
+    X = X[indices]
+    y = y[indices]
+
+    scores = X.dot(W)  # N x C
+    all_rows = np.arange(num_train)
+    correct_class_scores = scores[all_rows, y].reshape(-1, 1)  # N x 1
+    margin = scores - correct_class_scores + 1  # N x C
+    margin[all_rows, y] = 0
+    loss = np.sum(margin[margin > 0])
+    weighted_X = np.sum(margin > 0, axis=1).reshape(-1, 1) * X  # N x 1 * N x D = N x D
+    reduced_X = np.add.reduceat(weighted_X, np.r_[0, np.where(np.diff(y))[0] + 1], axis=0)  # C x D, sum data for each label
+    dW = -reduced_X.T  # D x C
+
+    loss /= num_train
+    dW /= num_train
+
+    loss += 0.5 * reg * np.sum(W * W)
+    dW += reg * W
 
     return loss, dW
