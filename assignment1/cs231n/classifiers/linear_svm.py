@@ -60,11 +60,6 @@ def svm_loss_vectorized(W, X, y, reg):
 
     num_train = X.shape[0]
 
-    # sort X and y according to y (so that X is orderd by its labels)
-    indices = y.argsort()
-    X = X[indices]
-    y = y[indices]
-
     scores = X.dot(W)  # N x C
     all_rows = np.arange(num_train)
     correct_class_scores = scores[all_rows, y].reshape(-1, 1)  # N x 1

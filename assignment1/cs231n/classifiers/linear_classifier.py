@@ -35,8 +35,9 @@ class LinearClassifier(object):
     # Run stochastic gradient descent to optimize W
     loss_history = []
     for it in xrange(num_iters):
-      X_batch = X[np.random.choice(num_train, size=batch_size, replace=True)]
-      y_batch = y[np.random.choice(num_classes, size=batch_size, replace=True)]
+      indxs = np.random.choice(num_train, size=batch_size, replace=True)
+      X_batch = X[indxs]
+      y_batch = y[indxs]
 
       # evaluate loss and gradient
       loss, grad = self.loss(X_batch, y_batch, reg)
@@ -56,22 +57,14 @@ class LinearClassifier(object):
     data points.
 
     Inputs:
-    - X: D x N array of training data. Each column is a D-dimensional point.
+    - X: N x D array of training data. Each column is a D-dimensional point.
 
     Returns:
     - y_pred: Predicted labels for the data in X. y_pred is a 1-dimensional
       array of length N, and each element is an integer giving the predicted
       class.
     """
-    y_pred = np.zeros(X.shape[1])
-    ###########################################################################
-    # TODO:                                                                   #
-    # Implement this method. Store the predicted labels in y_pred.            #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                           END OF YOUR CODE                              #
-    ###########################################################################
+    y_pred = np.argmax(X.dot(self.W), axis=1)
     return y_pred
   
   def loss(self, X_batch, y_batch, reg):
