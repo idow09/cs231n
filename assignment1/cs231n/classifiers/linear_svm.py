@@ -36,6 +36,7 @@ def svm_loss_naive(W, X, y, reg):
             if margin > 0:
                 loss += margin
                 dW[:,y[i]] -= X[i]
+                dW[:,j] += X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -67,14 +68,14 @@ def svm_loss_vectorized(W, X, y, reg):
     scores = X.dot(W)  # N x C
     all_rows = np.arange(num_train)
     correct_class_scores = scores[all_rows, y].reshape(-1, 1)  # N x 1
-    margin = scores - correct_class_scores + 1  # N x C
+    margin = np.maximum(scores - correct_class_scores + 1, 0)  # N x C
     margin[all_rows, y] = 0
     loss = np.sum(margin[margin > 0])
-    weighted_X = np.sum(margin > 0, axis=1).reshape(-1, 1) * X  # N x 1 * N x D = N x D
-    reduced_X = np.add.reduceat(weighted_X, np.r_[0, np.where(np.diff(y))[0] + 1], axis=0)  # C x D, sum data for each label
-    dW = -reduced_X.T  # D x C
-
     loss /= num_train
+
+    margin[margin > 0] = 1
+    margin[all_rows, y] = -np.sum(margin, axis=1)
+    dW = np.dot(X.T, margin)
     dW /= num_train
 
     loss += 0.5 * reg * np.sum(W * W)
