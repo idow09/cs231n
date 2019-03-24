@@ -70,7 +70,7 @@ def svm_loss_vectorized(W, X, y, reg):
 
     margin[margin > 0] = 1
     margin[all_rows, y] = -np.sum(margin, axis=1)
-    dW = np.dot(X.T, margin)
+    dW = X.T.dot(margin)
     dW /= num_train
 
     loss += 0.5 * reg * np.sum(W * W)
