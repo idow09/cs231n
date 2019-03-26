@@ -68,7 +68,8 @@ class TwoLayerNet(object):
         N, D = X.shape
 
         # Compute the forward pass
-        h1 = np.maximum(0, X.dot(W1) + b1)
+        h0 = X.dot(W1) + b1
+        h1 = np.maximum(0, h0)
         scores = h1.dot(W2) + b2
 
         # If the targets are not given then jump out, we're done
@@ -84,17 +85,18 @@ class TwoLayerNet(object):
         # Backward pass: compute gradients
         grads = {}
 
-        soft_scores[np.arange(N), y] -= 1
         dloss = soft_scores
+        dloss[np.arange(N), y] -= 1
+        dloss /= N
         grads['b2'] = np.sum(dloss, axis=0)
         grads['W2'] = h1.T.dot(dloss)
-        dh1 = dloss.dot(W2.T)
-        dh1[h1 < 0] = 0
-        grads['b1'] = np.sum(dh1, axis=0)
-        grads['W1'] = X.T.dot(dh1)
-
-        grads['W1'] += reg * W1
         grads['W2'] += reg * W2
+
+        grad_h1 = dloss.dot(W2.T)
+        grad_h1[h0 < 0] = 0
+        grads['b1'] = np.sum(grad_h1, axis=0)
+        grads['W1'] = X.T.dot(grad_h1)
+        grads['W1'] += reg * W1
 
         return loss, grads
 
