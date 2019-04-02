@@ -20,10 +20,12 @@ def affine_forward(x, w, b):
     - out: output, of shape (n, M)
     - cache: (x, w, b)
     """
-    n = x.shape[0]
-    x = x.reshape(n, -1)  # n * D
-    out = np.dot(x, w) + b.reshape(1, -1)  # broadcast b as a row vector
     cache = (x, w, b)
+
+    n = x.shape[0]
+    x_flat = x.reshape(n, -1)  # n * D
+    out = np.dot(x_flat, w) + b.reshape(1, -1)  # broadcast b as a row vector
+
     return out, cache
 
 
@@ -44,14 +46,10 @@ def affine_backward(dout, cache):
     - db: Gradient with respect to b, of shape (M,)
     """
     x, w, b = cache
-    dx, dw, db = None, None, None
-    ###########################################################################
-    # TODO: Implement the affine backward pass.                               #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    n = x.shape[0]
+    x_flat = x.reshape(n, -1)  # n * D
+    dx, dw, db = np.dot(dout, w.T).reshape(x.shape), np.dot(x_flat.T, dout), np.sum(dout, axis=0)
+
     return dx, dw, db
 
 
@@ -618,7 +616,7 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     - cache: Values needed for the backward pass
     """
     out, cache = None, None
-    eps = gn_param.get('eps',1e-5)
+    eps = gn_param.get('eps', 1e-5)
     ###########################################################################
     # TODO: Implement the forward pass for spatial group normalization.       #
     # This will be extremely similar to the layer norm implementation.        #
