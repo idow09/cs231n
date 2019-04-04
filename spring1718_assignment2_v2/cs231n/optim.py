@@ -90,7 +90,7 @@ def rmsprop(w, dw, config=None):
     decay_rate = config['decay_rate']
     epsilon = config['epsilon']
     cache = config['cache']
-    
+
     cache = decay_rate * cache + (1 - decay_rate) * dw ** 2
     w += - learning_rate * dw / (np.sqrt(cache) + epsilon)
 
@@ -121,18 +121,23 @@ def adam(w, dw, config=None):
     config.setdefault('v', np.zeros_like(w))
     config.setdefault('t', 0)
 
-    next_w = None
-    ###########################################################################
-    # TODO: Implement the Adam update formula, storing the next value of w in #
-    # the next_w variable. Don't forget to update the m, v, and t variables   #
-    # stored in config.                                                       #
-    #                                                                         #
-    # NOTE: In order to match the reference output, please modify t _before_  #
-    # using it in any calculations.                                           #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    learning_rate = config['learning_rate']
+    beta1 = config['beta1']
+    beta2 = config['beta2']
+    epsilon = config['epsilon']
+    m = config['m']
+    v = config['v']
+    t = config['t']
 
-    return next_w, config
+    t += 1
+    m = beta1 * m + (1 - beta1) * dw
+    mt = m / (1 - beta1 ** t)
+    v = beta2 * v + (1 - beta2) * (dw ** 2)
+    vt = v / (1 - beta2 ** t)
+    w += - learning_rate * mt / (np.sqrt(vt) + epsilon)
+
+    config['m'] = m
+    config['v'] = v
+    config['t'] = t
+
+    return w, config
