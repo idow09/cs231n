@@ -60,19 +60,12 @@ def sgd_momentum(w, dw, config=None):
     config.setdefault('momentum', 0.9)
     v = config.get('velocity', np.zeros_like(w))
 
-    next_w = None
-    ###########################################################################
-    # TODO: Implement the momentum update formula. Store the updated value in #
-    # the next_w variable. You should also use and update the velocity v.     #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    mu, lr = config['momentum'], config['learning_rate']
+    v = mu * v - lr * dw  # integrate velocity
+    w += v  # integrate position
+
     config['velocity'] = v
-
-    return next_w, config
-
+    return w, config
 
 
 def rmsprop(w, dw, config=None):
@@ -93,18 +86,16 @@ def rmsprop(w, dw, config=None):
     config.setdefault('epsilon', 1e-8)
     config.setdefault('cache', np.zeros_like(w))
 
-    next_w = None
-    ###########################################################################
-    # TODO: Implement the RMSprop update formula, storing the next value of w #
-    # in the next_w variable. Don't forget to update cache value stored in    #
-    # config['cache'].                                                        #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    learning_rate = config['learning_rate']
+    decay_rate = config['decay_rate']
+    epsilon = config['epsilon']
+    cache = config['cache']
+    
+    cache = decay_rate * cache + (1 - decay_rate) * dw ** 2
+    w += - learning_rate * dw / (np.sqrt(cache) + epsilon)
 
-    return next_w, config
+    config['cache'] = cache
+    return w, config
 
 
 def adam(w, dw, config=None):
