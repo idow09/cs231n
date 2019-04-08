@@ -1,5 +1,6 @@
 from builtins import range
 import numpy as np
+from scipy import ndimage
 
 
 def affine_forward(x, w, b):
@@ -406,15 +407,25 @@ def conv_forward_naive(x, w, b, conv_param):
       W' = 1 + (W + 2 * pad - WW) / stride
     - cache: (x, w, b, conv_param)
     """
-    out = None
-    ###########################################################################
-    # TODO: Implement the convolutional forward pass.                         #
-    # Hint: you can use the function np.pad for padding.                      #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    pad = conv_param['pad']
+    stride = conv_param['stride']
+    z = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
+
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+    H_new = 1 + (H + 2 * pad - HH) // stride
+    W_new = 1 + (W + 2 * pad - WW) // stride
+
+    out = np.empty((N, F, H_new, W_new))
+    for n in range(N):
+        sample = z[n]
+        for f in range(F):
+            filt = w[f]
+            for i in range(H_new):
+                hh = i * stride
+                for j in range(W_new):
+                    ww = j * stride
+                    out[n, f, i, j] = np.sum(sample[:, hh:hh + HH, ww:ww + WW] * filt) + b[f]
     cache = (x, w, b, conv_param)
     return out, cache
 
