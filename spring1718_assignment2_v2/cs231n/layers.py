@@ -1,6 +1,5 @@
 from builtins import range
 import numpy as np
-from scipy import ndimage
 
 
 def affine_forward(x, w, b):
@@ -411,7 +410,7 @@ def conv_forward_naive(x, w, b, conv_param):
     stride = conv_param['stride']
     z = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
 
-    N, C, H, W = x.shape
+    N, _, H, W = x.shape
     F, _, HH, WW = w.shape
     H_new = 1 + (H + 2 * pad - HH) // stride
     W_new = 1 + (W + 2 * pad - WW) // stride
@@ -443,14 +442,27 @@ def conv_backward_naive(dout, cache):
     - dw: Gradient with respect to w
     - db: Gradient with respect to b
     """
-    dx, dw, db = None, None, None
-    ###########################################################################
-    # TODO: Implement the convolutional backward pass.                        #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    x, w, b, conv_param = cache
+
+    pad = conv_param['pad']
+    stride = conv_param['stride']
+    z = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
+
+    dx, dw, db = np.zeros_like(x), np.zeros_like(w), np.zeros_like(b)
+    N, F, H_new, W_new = dout.shape
+    _, _, HH, WW = w.shape
+
+    for n in range(N):
+        sample = z[n]
+        for f in range(F):
+            for i in range(H_new):
+                hh = i * stride
+                for j in range(W_new):
+                    ww = j * stride
+                    dw[f] += sample[:, hh:hh + HH, ww:ww + WW]
+            dw[f] /= (H_new * W_new)
+            # db[f] = np.mean()
+
     return dx, dw, db
 
 
