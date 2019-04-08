@@ -205,6 +205,8 @@ class FullyConnectedNet(object):
         layer_in = X
         for i in range(self.num_layers - 1):
             layer_in, cache[i] = affine_relu_forward(layer_in, self.params['W%d' % i], self.params['b%d' % i])
+            if self.use_dropout:
+                layer_in, cache['dropout%d' % i] = dropout_forward(layer_in, self.dropout_param)
         scores, cache[self.num_layers] = affine_forward(layer_in, self.params['W%d' % (self.num_layers - 1)],
                                                         self.params['b%d' % (self.num_layers - 1)])
 
@@ -226,6 +228,8 @@ class FullyConnectedNet(object):
         # Regularization
         grads['W%d' % (self.num_layers - 1)] += self.reg * self.params['W%d' % (self.num_layers - 1)]
         for i in reversed(range(self.num_layers - 1)):
+            if self.use_dropout:
+                dout = dropout_backward(dout, cache['dropout%d' % i])
             dout, grads['W%d' % i], grads['b%d' % i] = affine_relu_backward(dout, cache[i])
             # Regularization
             grads['W%d' % i] += self.reg * self.params['W%d' % i]
