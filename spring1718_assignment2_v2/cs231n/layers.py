@@ -417,14 +417,12 @@ def conv_forward_naive(x, w, b, conv_param):
 
     out = np.empty((N, F, H_new, W_new))
     for n in range(N):
-        sample = z[n]
         for f in range(F):
-            filt = w[f]
             for i in range(H_new):
                 hh = i * stride
                 for j in range(W_new):
                     ww = j * stride
-                    out[n, f, i, j] = np.sum(sample[:, hh:hh + HH, ww:ww + WW] * filt) + b[f]
+                    out[n, f, i, j] = np.sum(z[n, :, hh:hh + HH, ww:ww + WW] * w[f]) + b[f]
     cache = (x, w, b, conv_param)
     return out, cache
 
@@ -446,24 +444,25 @@ def conv_backward_naive(dout, cache):
 
     pad = conv_param['pad']
     stride = conv_param['stride']
-    z = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
 
     dx, dw, db = np.zeros_like(x), np.zeros_like(w), np.zeros_like(b)
     N, F, H_new, W_new = dout.shape
     _, _, HH, WW = w.shape
 
+    z = np.pad(x, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
+    dz = np.pad(dx, ((0, 0), (0, 0), (pad, pad), (pad, pad)), 'constant')
+
     for n in range(N):
-        sample = z[n]
         for f in range(F):
             for i in range(H_new):
                 hh = i * stride
                 for j in range(W_new):
                     ww = j * stride
-                    dw[f] += sample[:, hh:hh + HH, ww:ww + WW]
-            dw[f] /= (H_new * W_new)
-            # db[f] = np.mean()
+                    dw[f] += dout[n, f, i, j] * z[n, :, hh:hh + HH, ww:ww + WW]
+                    db[f] += dout[n, f, i, j]
+                    dz[n, :, hh:hh + HH, ww:ww + WW] += dout[n, f, i, j] * w[f]
 
-    return dx, dw, db
+    return dz[:, :, pad:-pad, pad:-pad], dw, db
 
 
 def max_pool_forward_naive(x, pool_param):
