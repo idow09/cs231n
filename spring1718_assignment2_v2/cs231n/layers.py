@@ -132,15 +132,17 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
     running_var = bn_param.get('running_var', np.zeros(D, dtype=x.dtype))
 
+    cache = None
     if mode == 'train':
         sample_mean = np.mean(x, axis=0)
         sample_var = np.var(x, axis=0)
         running_mean = momentum * running_mean + (1 - momentum) * sample_mean
         running_var = momentum * running_var + (1 - momentum) * sample_var
 
-        out = normalize(x, sample_mean, sample_var, gamma, beta, eps)
+        out, x_norm = normalize(x, sample_mean, sample_var, gamma, beta, eps)
+        cache = (x, x_norm, sample_mean, sample_var, gamma, beta, eps)
     elif mode == 'test':
-        out = normalize(x, running_mean, running_var, gamma, beta, eps)
+        out, _ = normalize(x, running_mean, running_var, gamma, beta, eps)
     else:
         raise ValueError('Invalid forward batchnorm mode "%s"' % mode)
 
@@ -148,16 +150,17 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     bn_param['running_mean'] = running_mean
     bn_param['running_var'] = running_var
 
-    cache = None
     return out, cache
 
 
 def normalize(x, mean, var, gamma, beta, eps):
-    return gamma * ((x - mean) / np.sqrt(var + eps)) + beta
+    x_norm = (x - mean) / np.sqrt(var + eps)
+    return gamma * x_norm + beta, x_norm
 
 
 def batchnorm_backward(dout, cache):
     """
+
     Backward pass for batch normalization.
 
     For this implementation, you should write out a computation graph for
@@ -173,17 +176,42 @@ def batchnorm_backward(dout, cache):
     - dgamma: Gradient with respect to scale parameter gamma, of shape (D,)
     - dbeta: Gradient with respect to shift parameter beta, of shape (D,)
     """
-    dx, dgamma, dbeta = None, None, None
-    ###########################################################################
-    # TODO: Implement the backward pass for batch normalization. Store the    #
-    # results in the dx, dgamma, and dbeta variables.                         #
-    # Referencing the original paper (https://arxiv.org/abs/1502.03167)       #
-    # might prove to be helpful.                                              #
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+    x, x_norm, sample_mean, sample_var, gamma, beta, eps = cache
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout * x_norm, axis=0)
+
+    N = x.shape[0]
+    dx_norm = dout * gamma
+    # The hard part begins.
+    # 1
+    # sample_mean = 1 / N * np.sum(x, axis=0)
+    # 2
+    x_norm_num = x - sample_mean
+    # 3
+    sqr_error = x_norm_num ** 2
+    # 4
+    # sample_var = 1 / N * np.sum(sqr_error, axis=0)
+    # 5
+    x_norm_denom = np.sqrt(sample_var + eps)
+    # 6
+    x_norm_denom_inv = 1 / x_norm_denom
+
+    # Backward
+    # 6
+    dx_norm_denom_inv = np.sum(dx_norm * x_norm_num, axis=0)
+    # 5
+    dx_norm_denom = dx_norm_denom_inv * -1 / (x_norm_denom ** 2)
+    # 4
+    dvar = dx_norm_denom * 0.5 * (sample_var + eps) ** -0.5
+    # 3
+    d_sqr_error = 1 / N * np.ones_like(sqr_error) * dvar
+    # 2
+    dx_norm_num = dx_norm * x_norm_denom_inv
+    dx_norm_num += 2 * x_norm_num * d_sqr_error
+    dx = dx_norm_num
+    # 1
+    dmean = -np.sum(dx_norm_num, axis=0)
+    dx += 1 / N * dmean * np.ones_like(dmean)
 
     return dx, dgamma, dbeta
 
