@@ -138,8 +138,9 @@ class FullyConnectedNet(object):
         for i, H in enumerate(hidden_dims):
             self.params['W%d' % i] = np.random.normal(scale=weight_scale, size=(dim_in, H))
             self.params['b%d' % i] = np.zeros(H)
-            self.params['gamma%d' % i] = np.ones(H)
-            self.params['beta%d' % i] = np.zeros(H)
+            if self.normalization == 'batchnorm':
+                self.params['gamma%d' % i] = np.ones(H)
+                self.params['beta%d' % i] = np.zeros(H)
             dim_in = H
         self.params['W%d' % (self.num_layers - 1)] = np.random.normal(scale=weight_scale, size=(dim_in, num_classes))
         self.params['b%d' % (self.num_layers - 1)] = np.zeros(num_classes)
