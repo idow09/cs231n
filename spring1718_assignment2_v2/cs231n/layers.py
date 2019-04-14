@@ -361,7 +361,7 @@ def layernorm_backward(dout, cache):
     #                                             * np.sum(dout * (x - mean), axis=1, keepdims=True))
     # print(dx1[:5, 0])
     # print(dx[:5, 0])
-    dx, dgamma, dbeta = batchnorm_backward_alt(dout.T, cache, 1)
+    dx, dgamma, dbeta = batchnorm_backward(dout.T, cache, 1)
     return dx.T, dgamma, dbeta
 
 
@@ -646,10 +646,10 @@ def spatial_batchnorm_backward(dout, cache):
 
 def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     """
-    Computes the forward pass for spatial group normalization.
-    In contrast to layer normalization, group normalization splits each entry 
-    in the data into G contiguous pieces, which it then normalizes independently.
-    Per feature shifting and scaling are then applied to the data, in a manner identical to that of batch normalization and layer normalization.
+    Computes the forward pass for spatial group normalization. In contrast to layer normalization,
+    group normalization splits each entry in the data into G contiguous pieces, which it then normalizes
+    independently. Per feature shifting and scaling are then applied to the data, in a manner identical to that of
+    batch normalization and layer normalization.
 
     Inputs:
     - x: Input data of shape (N, C, H, W)
@@ -663,22 +663,25 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     - out: Output data, of shape (N, C, H, W)
     - cache: Values needed for the backward pass
     """
-    out, cache = None, None
+    N, C, H, W = x.shape
+    x = x.transpose(0, 2, 3, 1).reshape(-1, G)
+
     eps = gn_param.get('eps', 1e-5)
-    ###########################################################################
-    # TODO: Implement the forward pass for spatial group normalization.       #
-    # This will be extremely similar to the layer norm implementation.        #
-    # In particular, think about how you could transform the matrix so that   #
-    # the bulk of the code is similar to both train-time batch normalization  #
-    # and layer normalization!                                                # 
-    ###########################################################################
-    pass
-    ###########################################################################
-    #                             END OF YOUR CODE                            #
-    ###########################################################################
+
+    sample_mean = np.mean(x, axis=0)
+    sample_var = np.var(x, axis=0)
+
+    _, x_norm = normalize(x, sample_mean, sample_var, gamma, beta, eps)
+    cache = (x, x_norm, sample_mean, sample_var, gamma, beta, eps)
+
+    x_norm = x_norm.reshape(N, H, W, C).transpose(0, 3, 1, 2)
+    out = gamma * x_norm + beta
+
     return out, cache
 
 
+# function not implemented
+# noinspection PyUnusedLocal
 def spatial_groupnorm_backward(dout, cache):
     """
     Computes the backward pass for spatial group normalization.
