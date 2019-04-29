@@ -185,12 +185,20 @@ class CaptioningRNN(object):
         Wx, Wh, b = self.params['Wx'], self.params['Wh'], self.params['b']
         W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
 
+        h, _ = affine_forward(features, W_proj, b_proj)
+        cur_word = (self._start * np.ones((N, 1))).astype(np.int32)
+        for i in range(max_length):
+            word_embed, _ = word_embedding_forward(cur_word, W_embed)
+            h, _ = rnn_step_forward(word_embed[:, 0, :], h, Wx, Wh, b)
+            scores, _ = affine_forward(h, W_vocab, b_vocab)
+            captions[:, i] = np.argmax(scores, axis=1)
+            cur_word = captions[:, i].reshape(-1, 1)
         ###########################################################################
         # TODO: Implement test-time sampling for the model. You will need to      #
         # initialize the hidden state of the RNN by applying the learned affine   #
         # transform to the input image features. The first word that you feed to  #
         # the RNN should be the <START> token; its value is stored in the         #
-        # variable self._start. At each timestep you will need to do to:          #
+        # variable self._start. At each timestep you will need to do:             #
         # (1) Embed the previous word using the learned word embeddings           #
         # (2) Make an RNN step using the previous hidden state and the embedded   #
         #     current word to get the next hidden state.                          #
@@ -209,8 +217,4 @@ class CaptioningRNN(object):
         # NOTE: we are still working over minibatches in this function. Also if   #
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
         return captions
