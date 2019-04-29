@@ -76,16 +76,15 @@ def rnn_forward(x, h0, Wx, Wh, b):
     - h: Hidden states for the entire timeseries, of shape (N, T, H).
     - cache: Values needed in the backward pass
     """
-    h, cache = None, None
-    ##############################################################################
-    # TODO: Implement forward pass for a vanilla RNN running on a sequence of    #
-    # input data. You should use the rnn_step_forward function that you defined  #
-    # above. You can use a for loop to help compute the forward pass.            #
-    ##############################################################################
-    pass
-    ##############################################################################
-    #                               END OF YOUR CODE                             #
-    ##############################################################################
+    N, T, D = x.shape
+    _, H = h0.shape
+    h = np.empty((N, T, H))
+    cache = []
+    temp_h = h0
+    for t in range(T):
+        temp_h, temp_cache = rnn_step_forward(x[:, t, :], temp_h, Wx, Wh, b)
+        h[:, t, :] = temp_h
+        cache.append(temp_cache)
     return h, cache
 
 
