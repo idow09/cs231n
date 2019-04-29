@@ -77,7 +77,7 @@ def rnn_forward(x, h0, Wx, Wh, b):
     - cache: Values needed in the backward pass
     """
     N, T, D = x.shape
-    _, H = h0.shape
+    H = h0.shape[1]
     h = np.empty((N, T, H))
     cache = []
     temp_h = h0
@@ -107,16 +107,20 @@ def rnn_backward(dh, cache):
     - dWh: Gradient of hidden-to-hidden weights, of shape (H, H)
     - db: Gradient of biases, of shape (H,)
     """
-    dx, dh0, dWx, dWh, db = None, None, None, None, None
-    ##############################################################################
-    # TODO: Implement the backward pass for a vanilla RNN running an entire      #
-    # sequence of data. You should use the rnn_step_backward function that you   #
-    # defined above. You can use a for loop to help compute the backward pass.   #
-    ##############################################################################
-    pass
-    ##############################################################################
-    #                               END OF YOUR CODE                             #
-    ##############################################################################
+    x0, _, Wx0, Wh0, b0, next_h0 = cache[0]
+    dWx, dWh, db = np.zeros_like(Wx0), np.zeros_like(Wh0), np.zeros_like(b0)
+    N, D = x0.shape
+    T = dh.shape[1]
+    dx = np.empty((N, T, D))
+    temp_dh = 0
+
+    for t in reversed(range(T)):
+        temp_dx, temp_dh, temp_dWx, temp_dWh, temp_db = rnn_step_backward(temp_dh + dh[:, t, :], cache.pop())
+        dx[:, t, :] = temp_dx
+        dWx += temp_dWx
+        dWh += temp_dWh
+        db += temp_db
+    dh0 = temp_dh
     return dx, dh0, dWx, dWh, db
 
 
