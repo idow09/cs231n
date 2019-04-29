@@ -74,7 +74,6 @@ class CaptioningRNN(object):
         for k, v in self.params.items():
             self.params[k] = v.astype(self.dtype)
 
-
     def loss(self, features, captions):
         """
         Compute training-time loss for the RNN. We input image features and
@@ -116,6 +115,17 @@ class CaptioningRNN(object):
         W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
 
         loss, grads = 0.0, {}
+        h0, proj_cache = affine_forward(features, W_proj, b_proj)
+        captions_embed_in, embed_cache = word_embedding_forward(captions_in, W_embed)
+        h, rnn_cache = rnn_forward(captions_embed_in, h0, Wx, Wh, b)
+        vocab_scores, vocab_cache = temporal_affine_forward(h, W_vocab, b_vocab)
+
+        loss, dout = temporal_softmax_loss(vocab_scores, captions_out, mask)
+
+        dh, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dout, vocab_cache)
+        dcaptions_embed_in, dh0, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dh, rnn_cache)
+        grads['W_embed'] = word_embedding_backward(dcaptions_embed_in, embed_cache)
+        dfeatures, grads['W_proj'], grads['b_proj'] = affine_backward(dh0, proj_cache)
         ############################################################################
         # TODO: Implement the forward and backward passes for the CaptioningRNN.   #
         # In the forward pass you will need to do the following:                   #
@@ -140,13 +150,7 @@ class CaptioningRNN(object):
         # Note also that you are allowed to make use of functions from layers.py   #
         # in your implementation, if needed.                                       #
         ############################################################################
-        pass
-        ############################################################################
-        #                             END OF YOUR CODE                             #
-        ############################################################################
-
         return loss, grads
-
 
     def sample(self, features, max_length=30):
         """
