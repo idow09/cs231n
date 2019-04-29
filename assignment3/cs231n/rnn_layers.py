@@ -121,6 +121,7 @@ def rnn_backward(dh, cache):
         dWh += temp_dWh
         db += temp_db
     dh0 = temp_dh
+
     return dx, dh0, dWx, dWh, db
 
 
@@ -132,24 +133,15 @@ def word_embedding_forward(x, W):
 
     Inputs:
     - x: Integer array of shape (N, T) giving indices of words. Each element idx
-      of x muxt be in the range 0 <= idx < V.
+      of x must be in the range 0 <= idx < V.
     - W: Weight matrix of shape (V, D) giving word vectors for all words.
 
     Returns a tuple of:
     - out: Array of shape (N, T, D) giving word vectors for all input words.
     - cache: Values needed for the backward pass
     """
-    out, cache = None, None
-    ##############################################################################
-    # TODO: Implement the forward pass for word embeddings.                      #
-    #                                                                            #
-    # HINT: This can be done in one line using NumPy's array indexing.           #
-    ##############################################################################
-    pass
-    ##############################################################################
-    #                               END OF YOUR CODE                             #
-    ##############################################################################
-    return out, cache
+    cache = x, W
+    return W[x], cache
 
 
 def word_embedding_backward(dout, cache):
