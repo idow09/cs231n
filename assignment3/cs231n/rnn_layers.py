@@ -150,6 +150,7 @@ def word_embedding_backward(dout, cache):
     since they are integers, so we only return gradient for the word embedding
     matrix.
 
+    Note that words can appear more than once in a sequence.                   #
     HINT: Look up the function np.add.at
 
     Inputs:
@@ -159,17 +160,9 @@ def word_embedding_backward(dout, cache):
     Returns:
     - dW: Gradient of word embedding matrix, of shape (V, D).
     """
-    dW = None
-    ##############################################################################
-    # TODO: Implement the backward pass for word embeddings.                     #
-    #                                                                            #
-    # Note that words can appear more than once in a sequence.                   #
-    # HINT: Look up the function np.add.at                                       #
-    ##############################################################################
-    pass
-    ##############################################################################
-    #                               END OF YOUR CODE                             #
-    ##############################################################################
+    x, W = cache
+    dW = np.zeros_like(W)
+    np.add.at(dW, x, dout)
     return dW
 
 
