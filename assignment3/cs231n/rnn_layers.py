@@ -311,8 +311,10 @@ def lstm_backward(dh, cache):
     T = dh.shape[1]
     dx = np.empty((N, T, D))
     temp_dh = 0
+    temp_dc = 0
     for t in reversed(range(T)):
-        temp_dx, temp_dh, _, temp_dWx, temp_dWh, temp_db = lstm_step_backward(temp_dh + dh[:, t, :], _, cache.pop())
+        temp_dx, temp_dh, temp_dc, temp_dWx, temp_dWh, temp_db = \
+            lstm_step_backward(temp_dh + dh[:, t, :], temp_dc, cache.pop())
         dx[:, t, :] = temp_dx
         dWx += temp_dWx
         dWh += temp_dWh
