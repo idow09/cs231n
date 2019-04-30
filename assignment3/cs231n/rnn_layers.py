@@ -235,15 +235,17 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     H = prev_h.shape[1]
     da = np.empty_like(a)
 
-    di = dnext_c * g
-    df = dnext_c * prev_c
+    dnexth_dnextc = o * (1 - np.tanh(next_c) ** 2)
+    dnext_united = (dnext_c + dnext_h * dnexth_dnextc)
+    dprev_c = dnext_united * f
+    di = dnext_united * g
+    df = dnext_united * prev_c
+    dg = dnext_united * i
     do = dnext_h * np.tanh(next_c)
-    dg = dnext_c * i
-    dprev_c = dnext_c * f
-    da[:, : H] = di * i * (1 - i)
+    da[:, :H] = di * i * (1 - i)
     da[:, H: 2 * H] = df * f * (1 - f)
     da[:, 2 * H: 3 * H] = do * o * (1 - o)
-    da[:, 3 * H:] = dg * g * (1 - g)
+    da[:, 3 * H:] = dg * (1 - g ** 2)
     dx = da.dot(Wx.T)
     dprev_h = da.dot(Wh.T)
     dWx = x.T.dot(da)
@@ -303,15 +305,19 @@ def lstm_backward(dh, cache):
     - dWh: Gradient of hidden-to-hidden weight matrix of shape (H, 4H)
     - db: Gradient of biases, of shape (4H,)
     """
-    dx, dh0, dWx, dWh, db = None, None, None, None, None
-    #############################################################################
-    # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
-    # You should use the lstm_step_backward function that you just defined.     #
-    #############################################################################
-    pass
-    ##############################################################################
-    #                               END OF YOUR CODE                             #
-    ##############################################################################
+    x0, prev_h0, prev_c0, Wx0, Wh0, b0, a0, i0, f0, o0, g0, next_h0, next_c0 = cache[0]
+    dWx, dWh, db = np.zeros_like(Wx0), np.zeros_like(Wh0), np.zeros_like(b0)
+    N, D = x0.shape
+    T = dh.shape[1]
+    dx = np.empty((N, T, D))
+    temp_dh = 0
+    for t in reversed(range(T)):
+        temp_dx, temp_dh, _, temp_dWx, temp_dWh, temp_db = lstm_step_backward(temp_dh + dh[:, t, :], _, cache.pop())
+        dx[:, t, :] = temp_dx
+        dWx += temp_dWx
+        dWh += temp_dWh
+        db += temp_db
+    dh0 = temp_dh
 
     return dx, dh0, dWx, dWh, db
 
