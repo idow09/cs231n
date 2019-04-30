@@ -188,10 +188,16 @@ class CaptioningRNN(object):
         W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
 
         h, _ = affine_forward(features, W_proj, b_proj)
+        c = np.zeros_like(h)
         cur_word = (self._start * np.ones((N, 1))).astype(np.int32)
         for i in range(max_length):
             word_embed, _ = word_embedding_forward(cur_word, W_embed)
-            h, _ = rnn_step_forward(word_embed[:, 0, :], h, Wx, Wh, b)
+            if self.cell_type is 'rnn':
+                h, _ = rnn_step_forward(word_embed[:, 0, :], h, Wx, Wh, b)
+            elif self.cell_type is 'lstm':
+                h, c, _ = lstm_step_forward(word_embed[:, 0, :], h, c, Wx, Wh, b)
+            else:
+                raise ValueError('Oh Shit!')
             scores, _ = affine_forward(h, W_vocab, b_vocab)
             captions[:, i] = np.argmax(scores, axis=1)
             cur_word = captions[:, i].reshape(-1, 1)
